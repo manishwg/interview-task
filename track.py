@@ -32,7 +32,7 @@ def track_directlog(trackid):
 
 	# Validating tracking number as per client
 	if not re.match(r"^[\d]{10,12}$", trackid):
-		print('invalid tracking nuber')
+		print('invalid tracking number')
 		return
 
 
@@ -55,11 +55,9 @@ def track_directlog(trackid):
 				# sending post request and saving response as response object 
 				response = session.post(url = 'https://www.directlog.com.br/track_individual/index.asp', data = data) 
 				  
-				print(response.status_code)
-				# print(response.text)
 				if response.status_code == 200:
 					if 'erro_individual.html' in str(response.content) or 'Dados informados incorretos ou inexistentes!' in str(response.content) :
-						print('invalid tracking nuber')
+						print('invalid tracking number')
 						return
 					# parsing stuff
 					soup = BeautifulSoup(response.content, 'html.parser')
@@ -96,17 +94,12 @@ def track_ninjavan(trackid):
 	global session
 	try:
 		response = session.get("https://api.ninjavan.co/th/shipperpanel/app/tracking?&id=" + trackid)
-		print(response.status_code)
-		print(response.content)
 		if response.status_code == 200 :
 			parseData = [['time','description']]
-			# print(response.content)
 			data = json.loads(response.content)
 			event = data['orders'][0]['events']
 			for i in event:
-				# print(type(i['time']))
 				parseData.append([str(datetime.fromtimestamp(i['time']/1000.0)), i['description']])
-			# print(parseData)
 			print('\nStatus: ' + str(data['orders'][0]['status']) + '\n')
 			printTable(parseData)
 
