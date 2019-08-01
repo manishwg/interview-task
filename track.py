@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import re
 import sys
 import requests
 from lxml import html
@@ -30,6 +30,12 @@ def track_directlog(trackid):
 	track_info = dict()
 	track_info['stat'] = 0
 
+	# Validating tracking number as per client
+	if not re.match(r"^[\d]{10,12}$", trackid):
+		print('invalid tracking nuber')
+		return
+
+
 	tknParser = '//input[@id="tknConsulta2"]/@value'
 	try:
 		response = session.get("https://www.directlog.com.br/")
@@ -49,10 +55,10 @@ def track_directlog(trackid):
 				# sending post request and saving response as response object 
 				response = session.post(url = 'https://www.directlog.com.br/track_individual/index.asp', data = data) 
 				  
-
+				print(response.status_code)
+				# print(response.text)
 				if response.status_code == 200:
-
-					if 'erro_individual.html' in str(response.content):
+					if 'erro_individual.html' in str(response.content) or 'Dados informados incorretos ou inexistentes!' in str(response.content) :
 						print('invalid tracking nuber')
 						return
 					# parsing stuff
@@ -90,8 +96,9 @@ def track_ninjavan(trackid):
 	global session
 	try:
 		response = session.get("https://api.ninjavan.co/th/shipperpanel/app/tracking?&id=" + trackid)
-
-		if response.status_code == 200:
+		print(response.status_code)
+		print(response.content)
+		if response.status_code == 200 :
 			parseData = [['time','description']]
 			# print(response.content)
 			data = json.loads(response.content)
@@ -100,10 +107,15 @@ def track_ninjavan(trackid):
 				# print(type(i['time']))
 				parseData.append([str(datetime.fromtimestamp(i['time']/1000.0)), i['description']])
 			# print(parseData)
+			print('\nStatus: ' + str(data['orders'][0]['status']) + '\n')
 			printTable(parseData)
 
-		elif response.status_code == 404:
-			print( 'invalid tracking number' ) 
+		elif response.status_code in [404,410] :
+			print( 'invalid tracking number' )
+		else:
+			print( 'Unable to track' )
+
+
 
 	except requests.exceptions.Timeout:
 	    print(e)
